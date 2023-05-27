@@ -1,0 +1,8 @@
+__pycache__
+.history
+venv_dir
+
+credentials.py
+wishlist_html.p
+film_table.html
+chromedriver.exe
