@@ -45,7 +45,7 @@ def logon_kp(driver, wait, login, password, nickname):
     return nickname == nickname_elem.text
 
 
-def get_films_html(driver, wait):
+def get_wishlist_html(driver):
     result = []
     while(True):
         film_list = driver.find_element(By.ID, 'itemList')
@@ -56,6 +56,18 @@ def get_films_html(driver, wait):
         except NoSuchElementException:
             return result
         
+def get_ratings_html(driver):
+    result = []
+    while(True):
+        film_list = driver.find_element(By.CLASS_NAME, 'profileFilmsList')
+        result.append(film_list.get_attribute('innerHTML'))
+        try:
+            next_page_link = driver.find_element(By.XPATH, '//a[text()="»"]')
+            next_page_link.click()
+        except NoSuchElementException:
+            return result    
+        
+        
 def load_wishlist():
     driver, wait = init_driver()
     logon_kp(driver, wait, credentials.login, credentials.password, credentials.nickname)
@@ -65,8 +77,26 @@ def load_wishlist():
     num_select = Select(num_select)   
     num_select.select_by_value('200') 
 
-    wishlist_html = get_films_html(driver, wait)
+    wishlist_html = get_wishlist_html(driver)
     pickle.dump(wishlist_html, open("wishlist_html.p", 'wb'))
+
+    time.sleep(5)
+    driver.close()
+
+
+def load_ratings():
+    driver, wait = init_driver()
+    logon_kp(driver, wait, credentials.login, credentials.password, credentials.nickname)
+
+    ratings_button = driver.find_element(By.XPATH, '//a[text()="Оценки"]')
+    ratings_button.click()
+
+    num_select = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'navigator_per_page')))
+    num_select = Select(num_select)   
+    num_select.select_by_value('200')
+
+    ratings_html = get_ratings_html(driver)
+    pickle.dump(ratings_html, open("ratings_html.p", 'wb'))
 
     time.sleep(5)
     driver.close()
