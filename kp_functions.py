@@ -23,6 +23,9 @@ def init_driver():
 
 def logon_kp(driver, wait, login, password, nickname):
     driver.get('https://www.kinopoisk.ru/')
+
+    if 'Я не робот' in driver.page_source:
+        time.sleep(60)
     
     login_button = driver.find_element(By.CLASS_NAME, 'styles_loginButton__LWZQp')
     login_button.click()
@@ -73,7 +76,7 @@ def load_wishlist():
     logon_kp(driver, wait, credentials.login, credentials.password, credentials.nickname)
 
     driver.get('https://www.kinopoisk.ru/mykp/movies/')
-    num_select = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'navigator_per_page')))
+    num_select = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'per_page')))  # navigator_per_page
     num_select = Select(num_select)   
     num_select.select_by_value('200') 
 
