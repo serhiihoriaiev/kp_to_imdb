@@ -27,8 +27,10 @@ if __name__ == '__main__':
                 
                 if 'сериал' in name_rus.text:
                     result_dict['year'] = re.search(r'сериал,\s*(\d{4})', name_rus.text).group(1)
+                    result_dict['show'] = True
                 else:
-                        result_dict['year'] = re.search(r'\((\d{4})', name_rus.text).group(1)
+                    result_dict['year'] = re.search(r'\((\d{4})', name_rus.text).group(1)
+                    result_dict['show'] = False
                 result_dict['rating'] = re.search(r"rating:\s*'(\d*)", film.decode_contents()).group(1)             
                 
                 f.write(str(result_dict) + '\n')

@@ -25,9 +25,11 @@ if __name__ == '__main__':
                 result_dict['year'] = re.findall(r'\((\d{4})', info.text)[0]
 
                 if re.search(r'\(сериал\)', name.text):
-                    res_shows.append(result_dict)
+                    # res_shows.append(result_dict)
+                    result_dict['show'] = True
                 else:
-                    res_films.append(result_dict)
+                    # res_films.append(result_dict)
+                    result_dict['show'] = False
 
                 f.write(str(result_dict) + '\n')
             
