@@ -1,4 +1,5 @@
 import re
+import json
 import pickle
 from bs4 import BeautifulSoup
 
@@ -24,6 +25,8 @@ if __name__ == '__main__':
                                     if name_eng.text != '\xa0' 
                                     else re.match(r'^(.+?)\s*\((:?\d{4}|сериал)', name_rus.text).group(1))
                 result_dict['name'] = result_dict['name'].replace('\xa0', ' ')
+                if result_dict['name'] and ', The' in result_dict['name']:
+                    result_dict['name'] = re.sub(r'(.+), The', r'The \1', result_dict['name'])
                 
                 if 'сериал' in name_rus.text:
                     result_dict['year'] = re.search(r'сериал,\s*(\d{4})', name_rus.text).group(1)
@@ -33,4 +36,4 @@ if __name__ == '__main__':
                     result_dict['show'] = False
                 result_dict['rating'] = re.search(r"rating:\s*'(\d*)", film.decode_contents()).group(1)             
                 
-                f.write(str(result_dict) + ',\n')
+                f.write(json.dumps(result_dict) + ',\n')

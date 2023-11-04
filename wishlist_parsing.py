@@ -1,4 +1,5 @@
 import re
+import json
 import pickle
 from bs4 import BeautifulSoup
 
@@ -22,6 +23,8 @@ if __name__ == '__main__':
 
                 result_dict['ru_name'] = re.findall(r'^\(*[^\n(]+', name.text)[0].strip()
                 result_dict['name'] = re.findall(r'^([^\s][^(]*)\s', info.text)[0] if re.match(r'^[^\s]', info.text) else None
+                if result_dict['name'] and ', The' in result_dict['name']:
+                    result_dict['name'] = re.sub(r'(.+), The', r'The \1', result_dict['name'])
                 result_dict['year'] = re.findall(r'\((\d{4})', info.text)[0]
 
                 if re.search(r'\(сериал\)', name.text):
@@ -31,5 +34,5 @@ if __name__ == '__main__':
                     # res_films.append(result_dict)
                     result_dict['show'] = False
 
-                f.write(str(result_dict) + ',\n')
+                f.write(json.dumps(result_dict) + ',\n')
             
