@@ -31,5 +31,5 @@ if __name__ == '__main__':
                     # res_films.append(result_dict)
                     result_dict['show'] = False
 
-                f.write(str(result_dict) + '\n')
+                f.write(str(result_dict) + ',\n')
             

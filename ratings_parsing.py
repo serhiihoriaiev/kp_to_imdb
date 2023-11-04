@@ -33,4 +33,4 @@ if __name__ == '__main__':
                     result_dict['show'] = False
                 result_dict['rating'] = re.search(r"rating:\s*'(\d*)", film.decode_contents()).group(1)             
                 
-                f.write(str(result_dict) + '\n')
+                f.write(str(result_dict) + ',\n')
