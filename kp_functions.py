@@ -40,7 +40,7 @@ def logon_kp(driver, wait, login, password, nickname):
     pass_field.send_keys(Keys.ENTER)
 
     a = ActionChains(driver)
-    avatar_elem =  wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[class^="styles_avatar"]')))
+    avatar_elem = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[class^="styles_avatar"]')))
     a.move_to_element(avatar_elem).perform()
 
     nickname_elem = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'styles_primaryTitleDefaultAccount__a0_6V')))
@@ -73,7 +73,7 @@ def get_ratings_html(driver):
         
 def load_wishlist():
     driver, wait = init_driver()
-    logon_kp(driver, wait, credentials.login, credentials.password, credentials.nickname)
+    logon_kp(driver, wait, credentials.kp_login, credentials.kp_password, credentials.kp_nickname)
 
     driver.get('https://www.kinopoisk.ru/mykp/movies/')
     num_select = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'per_page')))  # navigator_per_page
@@ -89,7 +89,7 @@ def load_wishlist():
 
 def load_ratings():
     driver, wait = init_driver()
-    logon_kp(driver, wait, credentials.login, credentials.password, credentials.nickname)
+    logon_kp(driver, wait, credentials.kp_login, credentials.kp_password, credentials.kp_nickname)
 
     ratings_button = driver.find_element(By.XPATH, '//a[text()="Оценки"]')
     ratings_button.click()
