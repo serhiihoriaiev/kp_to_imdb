@@ -86,26 +86,26 @@ def locate_item(driver, wait, item):
     return True
 
 
-def add_to_wishlist(driver, wait, items):
+def add_to_watchlist(driver, wait, items):
     """
     This function adds an item to watchlist if it's not there yet
     """
     result = []
     for item in items:
         if not locate_item(driver, wait, item):
-            item['wishlisted'] = False
+            item['watchlisted'] = False
             result.append(item)
             continue
         
         watchlist_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.ipc-watchlist-ribbon__icon')))
         time.sleep(1)
         try:
-            check_if_in_wishlist = driver.find_element(By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')
+            check_if_in_watchlist = driver.find_element(By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')
         except NoSuchElementException:
             watchlist_button.click()
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')))
             
-        item['wishlisted'] = True
+        item['watchlisted'] = True
         result.append(item)
         
     return result
@@ -115,12 +115,12 @@ if __name__ == '__main__':
     start = timer()
     driver, wait = init_driver()
     # driver, wait = 0, 0
-    items_to_wishlist = unpack_item_file('short_wishlist.txt')
+    items_to_watchlist = unpack_item_file('short_watchlist.txt')
     logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
-    wishlisted = add_to_wishlist(driver, wait, items_to_wishlist)
+    watchlisted = add_to_watchlist(driver, wait, items_to_watchlist)
 
-    with open('wishlist_result.txt', 'w', encoding='utf-8') as f:
-        f.write(json.dumps(wishlisted))
+    with open('watchlist_result.txt', 'w', encoding='utf-8') as f:
+        f.write(json.dumps(watchlisted))
 
     logoff_imdb(wait)
 

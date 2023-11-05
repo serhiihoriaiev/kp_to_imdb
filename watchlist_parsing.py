@@ -5,13 +5,13 @@ from bs4 import BeautifulSoup
 
 if __name__ == '__main__':
 
-    html_lst = pickle.load(open("wishlist_html.p", "rb"))
+    html_lst = pickle.load(open("watchlist_html.p", "rb"))
     res_films = []
     res_shows = []
     # with open("film_table.html", "w") as f:
     #     f.write(html_lst[0])
 
-    with open('parsed_wishlist.txt', 'w', encoding='utf-8') as f:
+    with open('parsed_watchlist.txt', 'w', encoding='utf-8') as f:
         for page in html_lst:
             soup = BeautifulSoup(page, 'html.parser')
             film_elements = soup.find_all('li', class_='item')

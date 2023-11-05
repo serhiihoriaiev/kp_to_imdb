@@ -48,7 +48,7 @@ def logon_kp(driver, wait, login, password, nickname):
     return nickname == nickname_elem.text
 
 
-def get_wishlist_html(driver):
+def get_watchlist_html(driver):
     result = []
     while(True):
         film_list = driver.find_element(By.ID, 'itemList')
@@ -71,7 +71,7 @@ def get_ratings_html(driver):
             return result    
         
         
-def load_wishlist():
+def load_watchlist():
     driver, wait = init_driver()
     logon_kp(driver, wait, credentials.kp_login, credentials.kp_password, credentials.kp_nickname)
 
@@ -80,8 +80,8 @@ def load_wishlist():
     num_select = Select(num_select)   
     num_select.select_by_value('200') 
 
-    wishlist_html = get_wishlist_html(driver)
-    pickle.dump(wishlist_html, open("wishlist_html.p", 'wb'))
+    watchlist_html = get_watchlist_html(driver)
+    pickle.dump(watchlist_html, open("watchlist_html.p", 'wb'))
 
     time.sleep(5)
     driver.close()
