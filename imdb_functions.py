@@ -96,9 +96,18 @@ def add_to_watchlist(driver, wait, items):
             item['watchlisted'] = False
             result.append(item)
             continue
+
+        # if it's already rated, no need adding it to watchlist
+        rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+        time.sleep(1)
+        if rate_button.text != 'Rate':
+            item['watchlisted'] = False
+            item['rated'] = True
+            result.append(item)
+            continue
         
         watchlist_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.ipc-watchlist-ribbon__icon')))
-        time.sleep(1)
+        # time.sleep(2)
         try:
             check_if_in_watchlist = driver.find_element(By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')
         except NoSuchElementException:
@@ -110,11 +119,38 @@ def add_to_watchlist(driver, wait, items):
         
     return result
 
+def rate_items(driver, wait, items):
+    """
+    This function rates an item if it's not rated yet
+    """
+    result = []
+    for item in items:
+        if not locate_item(driver, wait, item):
+            item['rated'] = False
+            result.append(item)
+            continue
 
-if __name__ == '__main__':
-    start = timer()
+        rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+        time.sleep(2)
+
+        if rate_button.text == 'Rate':
+            rate_button.click()
+            rating_star = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button[aria-label="Rate ' + item['rating'] + '"]')))
+            a = ActionChains(driver)
+            a.move_to_element(rating_star).click().perform()
+
+            confirm_button = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'ipc-rating-prompt__rate-button')))
+            confirm_button.click()
+            time.sleep(1)
+            
+        item['rated'] = True
+        result.append(item)
+    
+    return result
+
+
+def run_watchlist_adding():
     driver, wait = init_driver()
-    # driver, wait = 0, 0
     items_to_watchlist = unpack_item_file('short_watchlist.txt')
     logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
     watchlisted = add_to_watchlist(driver, wait, items_to_watchlist)
@@ -124,5 +160,20 @@ if __name__ == '__main__':
 
     logoff_imdb(wait)
 
+def run_rating():
+    driver, wait = init_driver()
+    items_to_rate = unpack_item_file('short_ratings.txt')
+    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
+    rated = rate_items(driver, wait, items_to_rate)
+
+    with open('rate_result.txt', 'w', encoding='utf-8') as f:
+        f.write(json.dumps(rated))
+
+    logoff_imdb(wait)
+
+if __name__ == '__main__':
+    start = timer()
+    # run_watchlist_adding()
+    run_rating()
     end = timer()
     print(f'Script lasted for {round(end-start, 1)} seconds')
