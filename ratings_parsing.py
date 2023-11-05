@@ -27,6 +27,8 @@ if __name__ == '__main__':
                 result_dict['name'] = result_dict['name'].replace('\xa0', ' ')
                 if result_dict['name'] and ', The' in result_dict['name']:
                     result_dict['name'] = re.sub(r'(.+), The', r'The \1', result_dict['name'])
+                elif result_dict['name'] and ', [Dd]as' in result_dict['name']:
+                    result_dict['name'] = re.sub(r'(.+), [Dd]he', r'Das \1', result_dict['name'])
                 
                 if 'сериал' in name_rus.text:
                     result_dict['year'] = re.search(r'сериал,\s*(\d{4})', name_rus.text).group(1)
