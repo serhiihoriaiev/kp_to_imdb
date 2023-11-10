@@ -3,6 +3,7 @@ import json
 import pickle
 import os
 import credentials
+import winsound
 
 from kp_functions import init_driver
 from timeit import default_timer as timer
@@ -74,7 +75,12 @@ def locate_item(driver, wait, item):
     search_field.send_keys(name + ' ' + item['year'])
     search_field.send_keys(Keys.ENTER)
 
-    match = driver.find_element(By.CSS_SELECTOR, 'a.ipc-metadata-list-summary-item__t')
+    try:  # for cases when captcha shows up 
+        match = driver.find_element(By.CSS_SELECTOR, 'a.ipc-metadata-list-summary-item__t')
+    except NoSuchElementException:
+        winsound.Beep(1000, 440)
+        match = WebDriverWait(driver, 60).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'a.ipc-metadata-list-summary-item__t')))
+
     if match.text.strip() != name:
         try:
             exact_match_button = driver.find_element(By.CSS_SELECTOR, 'a.results-section-exact-match-btn')
@@ -86,88 +92,80 @@ def locate_item(driver, wait, item):
     return True
 
 
-def add_to_watchlist(driver, wait, items):
+def add_to_watchlist(driver, wait, item):
     """
     This function adds an item to watchlist if it's not there yet
     """
-    result = []
-    for item in items:
-        if not locate_item(driver, wait, item):
-            item['watchlisted'] = False
-            result.append(item)
-            continue
+    if not locate_item(driver, wait, item):
+        item['watchlisted'] = False
+        return item
 
-        # if it's already rated, no need adding it to watchlist
-        rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
-        time.sleep(1)
-        if rate_button.text != 'Rate':
-            item['watchlisted'] = False
-            item['rated'] = True
-            result.append(item)
-            continue
+    # if it's already rated, no need adding it to watchlist
+    rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+    time.sleep(1)
+    if rate_button.text != 'Rate':
+        item['watchlisted'] = False
+        item['rated'] = True
+        return item
+    
+    watchlist_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.ipc-watchlist-ribbon__icon')))
+    # time.sleep(2)
+    try:
+        check_if_in_watchlist = driver.find_element(By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')
+    except NoSuchElementException:
+        watchlist_button.click()
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')))
         
-        watchlist_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.ipc-watchlist-ribbon__icon')))
-        # time.sleep(2)
-        try:
-            check_if_in_watchlist = driver.find_element(By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')
-        except NoSuchElementException:
-            watchlist_button.click()
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ipc-watchlist-ribbon--inWatchlist.hero-media__watchlist')))
-            
-        item['watchlisted'] = True
-        result.append(item)
+    item['watchlisted'] = True
         
-    return result
+    return item
 
-def rate_items(driver, wait, items):
+def rate_item(driver, wait, item):
     """
     This function rates an item if it's not rated yet
     """
-    result = []
-    for item in items:
-        if not locate_item(driver, wait, item):
-            item['rated'] = False
-            result.append(item)
-            continue
+    if not locate_item(driver, wait, item):
+        item['rated'] = False
+        return item
 
-        rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
-        time.sleep(2)
+    rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+    time.sleep(2)
 
-        if rate_button.text == 'Rate':
-            rate_button.click()
-            rating_star = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button[aria-label="Rate ' + item['rating'] + '"]')))
-            a = ActionChains(driver)
-            a.move_to_element(rating_star).click().perform()
+    if rate_button.text == 'Rate':
+        rate_button.click()
+        rating_star = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button[aria-label="Rate ' + item['rating'] + '"]')))
+        a = ActionChains(driver)
+        a.move_to_element(rating_star).click().perform()
 
-            confirm_button = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'ipc-rating-prompt__rate-button')))
-            confirm_button.click()
-            time.sleep(1)
-            
-        item['rated'] = True
-        result.append(item)
-    
-    return result
+        confirm_button = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'ipc-rating-prompt__rate-button')))
+        confirm_button.click()
+        time.sleep(1)
+        
+    item['rated'] = True
+    return item
 
 
 def run_watchlist_adding():
     driver, wait = init_driver()
     items_to_watchlist = unpack_item_file('short_watchlist.txt')
     logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
-    watchlisted = add_to_watchlist(driver, wait, items_to_watchlist)
+    for item in items_to_watchlist:
+        watchlisted = add_to_watchlist(driver, wait, item)
 
-    with open('watchlist_result.txt', 'w', encoding='utf-8') as f:
-        f.write(json.dumps(watchlisted))
+        with open('watchlist_result.txt', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(watchlisted))
 
     logoff_imdb(wait)
 
 def run_rating():
     driver, wait = init_driver()
-    items_to_rate = unpack_item_file('short_ratings.txt')
+    items_to_rate = unpack_item_file('parsed_ratings.txt')
     logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
-    rated = rate_items(driver, wait, items_to_rate)
+    for item in items_to_rate:
+        rated = rate_item(driver, wait, item)
 
-    with open('rate_result.txt', 'w', encoding='utf-8') as f:
-        f.write(json.dumps(rated))
+        with open('rate_result.txt', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(rated) + ',\n')
 
     logoff_imdb(wait)
 
