@@ -1,0 +1,10 @@
+__pycache__
+.history
+*.txt
+venv_dir
+
+credentials.py
+*html.p
+film_table.html
+chromedriver.exe
+parsed*.txt
