@@ -3,19 +3,15 @@ import json
 import pickle
 import os
 import credentials
-import winsound
 
 from kp_functions import init_driver
 from timeit import default_timer as timer
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
 
 def logon_imdb(driver, wait, email, password, nickname):
     driver.get('https://www.imdb.com/registration/signin')
@@ -65,7 +61,7 @@ def unpack_item_file(items_file):
     items = [json.loads(item.strip()) for item in items]
     return items
 
-def locate_item(driver, wait, item):
+def locate_item(driver,item):
     """
     This function searches for an item and opens it's page
     """
@@ -78,7 +74,8 @@ def locate_item(driver, wait, item):
     try:  # for cases when captcha shows up 
         match = driver.find_element(By.CSS_SELECTOR, 'a.ipc-metadata-list-summary-item__t')
     except NoSuchElementException:
-        winsound.Beep(1000, 440)
+        if 'No results found for' in driver.page_source:
+            return False
         match = WebDriverWait(driver, 60).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'a.ipc-metadata-list-summary-item__t')))
 
     if match.text.strip() != name:
@@ -96,7 +93,7 @@ def add_to_watchlist(driver, wait, item):
     """
     This function adds an item to watchlist if it's not there yet
     """
-    if not locate_item(driver, wait, item):
+    if not locate_item(driver, item):
         item['watchlisted'] = False
         return item
 
@@ -124,7 +121,7 @@ def rate_item(driver, wait, item):
     """
     This function rates an item if it's not rated yet
     """
-    if not locate_item(driver, wait, item):
+    if not locate_item(driver, item):
         item['rated'] = False
         return item
 
