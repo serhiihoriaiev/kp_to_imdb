@@ -4,8 +4,8 @@ import imdb_functions
 choices = {
     '1': kp_functions.load_watchlist,
     '2': kp_functions.load_ratings,
-    '3': imdb_functions.add_to_watchlist,
-    '4': imdb_functions.rate_item
+    '3': imdb_functions.run_watchlist_adding,
+    '4': imdb_functions.run_rating
 }
 
 if __name__ == '__main__':
