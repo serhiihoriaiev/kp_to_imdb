@@ -166,9 +166,21 @@ def run_rating():
 
     logoff_imdb(wait)
 
+def list_unsuccessful(job_type):
+    if job_type == 'ratings':
+        file_name = 'rate_result.txt'
+        key = 'rated'
+    elif job_type == 'watchlist':
+        file_name = 'watchlist_result.txt'
+        key = 'watchlisted'
+
+    items_to_parse = unpack_item_file(file_name)
+    result = [item for item in items_to_parse if item[key] is False]
+
+    for item in result:
+        print(item['name'], ', ', item['year'], sep='')
+
+
 if __name__ == '__main__':
-    start = timer()
     # run_watchlist_adding()
-    run_rating()
-    end = timer()
-    print(f'Script lasted for {round(end-start, 1)} seconds')
+    list_unsuccessful('ratings')
