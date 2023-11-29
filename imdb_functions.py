@@ -178,9 +178,12 @@ def list_unsuccessful(job_type):
     result = [item for item in items_to_parse if item[key] is False]
 
     for item in result:
-        print(item['name'], ', ', item['year'], sep='')
+        if job_type == 'ratings':
+            print(item['name'], item['year'], item['rating'], sep=', ')
+        elif job_type == 'watchlist':
+            print(item['name'], item['year'], sep=', ')
+
 
 
 if __name__ == '__main__':
-    # run_watchlist_adding()
     list_unsuccessful('ratings')
