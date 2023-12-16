@@ -97,8 +97,14 @@ def add_to_watchlist(driver, wait, item):
         item['watchlisted'] = False
         return item
 
-    # if it's already rated, no need adding it to watchlist
-    rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+    try:
+        # if it's already rated, no need adding it to watchlist
+        rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+    except TimeoutException:
+        with open("last_page.html", "w") as html_file:
+            html_file.write(driver.page_source)
+        raise TimeoutException
+    
     time.sleep(1)
     if rate_button.text != 'Rate':
         item['watchlisted'] = False
@@ -144,13 +150,13 @@ def rate_item(driver, wait, item):
 
 def run_watchlist_adding():
     driver, wait = init_driver()
-    items_to_watchlist = unpack_item_file('short_watchlist.txt')
+    items_to_watchlist = unpack_item_file('parsed_watchlist.txt')
     logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
     for item in items_to_watchlist:
         watchlisted = add_to_watchlist(driver, wait, item)
 
         with open('watchlist_result.txt', 'a', encoding='utf-8') as f:
-            f.write(json.dumps(watchlisted))
+            f.write(json.dumps(watchlisted) + ',\n')
 
     logoff_imdb(wait)
 
