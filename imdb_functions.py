@@ -14,6 +14,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
 def logon_imdb(driver, wait, email, password, nickname):
+    """
+    Logs into IMDB website and navigates to it's main page.
+    """
     driver.get('https://www.imdb.com/registration/signin')
 
     signin_button = driver.find_element(By.XPATH, '//span[text()="Sign in with IMDb"]')
@@ -34,7 +37,11 @@ def logon_imdb(driver, wait, email, password, nickname):
 
     return nickname == nickname_elem.text
 
+
 def logoff_imdb(wait):
+    """
+    Logs off the IMDB website
+    """
     menu_elem = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav__userMenu')))
     menu_elem.click()
     
@@ -44,9 +51,42 @@ def logoff_imdb(wait):
 
     wait.until(EC.visibility_of_element_located((By.XPATH, '//span[text()="Sign In"]')))
 
+
+def run_watchlist_adding(input_file='parsed_watchlist.txt'):
+    """
+    Runs IMDB watchlist adding routine for items from the input_file
+    """
+    driver, wait = init_driver()
+    items_to_watchlist = unpack_item_file(input_file)
+    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
+    for item in items_to_watchlist:
+        watchlisted = add_to_watchlist(driver, wait, item)
+
+        with open('watchlist_result.txt', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(watchlisted) + ',\n')
+
+    logoff_imdb(wait)
+
+
+def run_rating(input_file='parsed_ratings.txt'):
+    """
+    Runs IMDB rating routine for items from the input_file
+    """
+    driver, wait = init_driver()
+    items_to_rate = unpack_item_file(input_file)
+    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
+    for item in items_to_rate:
+        rated = rate_item(driver, wait, item)
+
+        with open('rate_result.txt', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(rated) + ',\n')
+
+    logoff_imdb(wait)
+
+
 def unpack_item_file(items_file):
     """
-    This function finds and returns URLs for IMDB items listed in items_file 
+    Converts parsed content from file into list of dicts, where every dict is an IMDB item
     """
     with open(items_file, 'r', encoding='UTF-8') as items_f:
         items = items_f.read()
@@ -61,9 +101,10 @@ def unpack_item_file(items_file):
     items = [json.loads(item.strip()) for item in items]
     return items
 
+
 def locate_item(driver,item):
     """
-    This function searches for an item and opens it's page
+    This function searches for an item and opens its page
     """
     name = item['name'] if item['name'] else item['ru_name']
 
@@ -148,31 +189,14 @@ def rate_item(driver, wait, item):
     return item
 
 
-def run_watchlist_adding():
-    driver, wait = init_driver()
-    items_to_watchlist = unpack_item_file('parsed_watchlist.txt')
-    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
-    for item in items_to_watchlist:
-        watchlisted = add_to_watchlist(driver, wait, item)
-
-        with open('watchlist_result.txt', 'a', encoding='utf-8') as f:
-            f.write(json.dumps(watchlisted) + ',\n')
-
-    logoff_imdb(wait)
-
-def run_rating():
-    driver, wait = init_driver()
-    items_to_rate = unpack_item_file('parsed_ratings.txt')
-    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
-    for item in items_to_rate:
-        rated = rate_item(driver, wait, item)
-
-        with open('rate_result.txt', 'a', encoding='utf-8') as f:
-            f.write(json.dumps(rated) + ',\n')
-
-    logoff_imdb(wait)
-
 def list_unsuccessful(job_type):
+    """
+    job_type: str, may only be 'ratings' or 'watchlist'
+    
+    This is auxiliary function meant to be used when this script file is run as main.
+    Takes result files (some kind of logs that is documented along the way of main functions)
+    and returns list of items which weren't rated or watchlisted.
+    """
     if job_type == 'ratings':
         file_name = 'rate_result.txt'
         key = 'rated'
@@ -188,7 +212,6 @@ def list_unsuccessful(job_type):
             print(item['name'], item['year'], item['rating'], sep=', ')
         elif job_type == 'watchlist':
             print(item['name'], item['year'], sep=', ')
-
 
 
 if __name__ == '__main__':

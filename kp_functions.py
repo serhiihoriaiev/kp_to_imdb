@@ -13,15 +13,19 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 
-fake_login = 'dingo1'
-fake_password = 'hftdw442C' 
-
 def init_driver():
+    """
+    This function just initializes webdriver and wait object that is used in most of the project
+    """
     driver = webdriver.Chrome(service=Service(os.path.join(os.getcwd(), 'chromedriver.exe')))
     wait = WebDriverWait(driver, 30)
     return driver, wait
 
+
 def logon_kp(driver, wait, login, password, nickname):
+    """
+    This function logs into KP website and navigates to it's main page.
+    """
     driver.get('https://www.kinopoisk.ru/')
 
     if 'Я не робот' in driver.page_source:
@@ -48,30 +52,11 @@ def logon_kp(driver, wait, login, password, nickname):
     return nickname == nickname_elem.text
 
 
-def get_watchlist_html(driver):
-    result = []
-    while(True):
-        film_list = driver.find_element(By.ID, 'itemList')
-        result.append(film_list.get_attribute('innerHTML'))
-        try:
-            next_page_link = driver.find_element(By.XPATH, '//a[text()="»"]')
-            next_page_link.click()
-        except NoSuchElementException:
-            return result
-        
-def get_ratings_html(driver):
-    result = []
-    while(True):
-        film_list = driver.find_element(By.CLASS_NAME, 'profileFilmsList')
-        result.append(film_list.get_attribute('innerHTML'))
-        try:
-            next_page_link = driver.find_element(By.XPATH, '//a[text()="»"]')
-            next_page_link.click()
-        except NoSuchElementException:
-            return result    
-        
-        
 def load_watchlist():
+    """
+    This function navigates to watchlist page and uses get_watchlist_html() to scrape
+    watchlist content and saves it in pickle file.
+    """
     driver, wait = init_driver()
     logon_kp(driver, wait, credentials.kp_login, credentials.kp_password, credentials.kp_nickname)
 
@@ -88,6 +73,10 @@ def load_watchlist():
 
 
 def load_ratings():
+    """
+    This function navigates to ratings page and uses get_ratings_html() to scrape
+    ratings content and saves it in pickle file.
+    """
     driver, wait = init_driver()
     logon_kp(driver, wait, credentials.kp_login, credentials.kp_password, credentials.kp_nickname)
 
@@ -103,3 +92,34 @@ def load_ratings():
 
     time.sleep(5)
     driver.close()
+
+
+def get_watchlist_html(driver):
+    """
+    Run through the watchlist and scrape it's HTML content
+    """
+    result = []
+    while(True):
+        film_list = driver.find_element(By.ID, 'itemList')
+        result.append(film_list.get_attribute('innerHTML'))
+        try:
+            next_page_link = driver.find_element(By.XPATH, '//a[text()="»"]')
+            next_page_link.click()
+        except NoSuchElementException:
+            return result
+        
+        
+def get_ratings_html(driver):
+    """
+    Run through the ratings list and scrape it's HTML content
+    """
+    result = []
+    while(True):
+        film_list = driver.find_element(By.CLASS_NAME, 'profileFilmsList')
+        result.append(film_list.get_attribute('innerHTML'))
+        try:
+            next_page_link = driver.find_element(By.XPATH, '//a[text()="»"]')
+            next_page_link.click()
+        except NoSuchElementException:
+            return result    
+        
