@@ -3,21 +3,20 @@ import json
 import pickle
 import os
 import credentials
-import winsound
 
 from kp_functions import init_driver
 from timeit import default_timer as timer
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
 
 def logon_imdb(driver, wait, email, password, nickname):
+    """
+    Logs into IMDB website and navigates to it's main page.
+    """
     driver.get('https://www.imdb.com/registration/signin')
 
     signin_button = driver.find_element(By.XPATH, '//span[text()="Sign in with IMDb"]')
@@ -38,7 +37,11 @@ def logon_imdb(driver, wait, email, password, nickname):
 
     return nickname == nickname_elem.text
 
+
 def logoff_imdb(wait):
+    """
+    Logs off the IMDB website
+    """
     menu_elem = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.nav__userMenu')))
     menu_elem.click()
     
@@ -48,9 +51,42 @@ def logoff_imdb(wait):
 
     wait.until(EC.visibility_of_element_located((By.XPATH, '//span[text()="Sign In"]')))
 
+
+def run_watchlist_adding(input_file='parsed_watchlist.txt'):
+    """
+    Runs IMDB watchlist adding routine for items from the input_file
+    """
+    driver, wait = init_driver()
+    items_to_watchlist = unpack_item_file(input_file)
+    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
+    for item in items_to_watchlist:
+        watchlisted = add_to_watchlist(driver, wait, item)
+
+        with open('watchlist_result.txt', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(watchlisted) + ',\n')
+
+    logoff_imdb(wait)
+
+
+def run_rating(input_file='parsed_ratings.txt'):
+    """
+    Runs IMDB rating routine for items from the input_file
+    """
+    driver, wait = init_driver()
+    items_to_rate = unpack_item_file(input_file)
+    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
+    for item in items_to_rate:
+        rated = rate_item(driver, wait, item)
+
+        with open('rate_result.txt', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(rated) + ',\n')
+
+    logoff_imdb(wait)
+
+
 def unpack_item_file(items_file):
     """
-    This function finds and returns URLs for IMDB items listed in items_file 
+    Converts parsed content from file into list of dicts, where every dict is an IMDB item
     """
     with open(items_file, 'r', encoding='UTF-8') as items_f:
         items = items_f.read()
@@ -65,9 +101,10 @@ def unpack_item_file(items_file):
     items = [json.loads(item.strip()) for item in items]
     return items
 
-def locate_item(driver, wait, item):
+
+def locate_item(driver,item):
     """
-    This function searches for an item and opens it's page
+    This function searches for an item and opens its page
     """
     name = item['name'] if item['name'] else item['ru_name']
 
@@ -78,7 +115,8 @@ def locate_item(driver, wait, item):
     try:  # for cases when captcha shows up 
         match = driver.find_element(By.CSS_SELECTOR, 'a.ipc-metadata-list-summary-item__t')
     except NoSuchElementException:
-        winsound.Beep(1000, 440)
+        if 'No results found for' in driver.page_source:
+            return False
         match = WebDriverWait(driver, 60).until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'a.ipc-metadata-list-summary-item__t')))
 
     if match.text.strip() != name:
@@ -96,12 +134,18 @@ def add_to_watchlist(driver, wait, item):
     """
     This function adds an item to watchlist if it's not there yet
     """
-    if not locate_item(driver, wait, item):
+    if not locate_item(driver, item):
         item['watchlisted'] = False
         return item
 
-    # if it's already rated, no need adding it to watchlist
-    rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+    try:
+        # if it's already rated, no need adding it to watchlist
+        rate_button = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'button.ipc-btn')))
+    except TimeoutException:
+        with open("last_page.html", "w") as html_file:
+            html_file.write(driver.page_source)
+        raise TimeoutException
+    
     time.sleep(1)
     if rate_button.text != 'Rate':
         item['watchlisted'] = False
@@ -124,7 +168,7 @@ def rate_item(driver, wait, item):
     """
     This function rates an item if it's not rated yet
     """
-    if not locate_item(driver, wait, item):
+    if not locate_item(driver, item):
         item['rated'] = False
         return item
 
@@ -145,33 +189,30 @@ def rate_item(driver, wait, item):
     return item
 
 
-def run_watchlist_adding():
-    driver, wait = init_driver()
-    items_to_watchlist = unpack_item_file('short_watchlist.txt')
-    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
-    for item in items_to_watchlist:
-        watchlisted = add_to_watchlist(driver, wait, item)
+def list_unsuccessful(job_type):
+    """
+    job_type: str, may only be 'ratings' or 'watchlist'
+    
+    This is auxiliary function meant to be used when this script file is run as main.
+    Takes result files (some kind of logs that is documented along the way of main functions)
+    and returns list of items which weren't rated or watchlisted.
+    """
+    if job_type == 'ratings':
+        file_name = 'rate_result.txt'
+        key = 'rated'
+    elif job_type == 'watchlist':
+        file_name = 'watchlist_result.txt'
+        key = 'watchlisted'
 
-        with open('watchlist_result.txt', 'a', encoding='utf-8') as f:
-            f.write(json.dumps(watchlisted))
+    items_to_parse = unpack_item_file(file_name)
+    result = [item for item in items_to_parse if item[key] is False]
 
-    logoff_imdb(wait)
+    for item in result:
+        if job_type == 'ratings':
+            print(item['name'], item['year'], item['rating'], sep=', ')
+        elif job_type == 'watchlist':
+            print(item['name'], item['year'], sep=', ')
 
-def run_rating():
-    driver, wait = init_driver()
-    items_to_rate = unpack_item_file('parsed_ratings.txt')
-    logon_imdb(driver, wait, credentials.imdb_email, credentials.imdb_password, credentials.imdb_nickname)
-    for item in items_to_rate:
-        rated = rate_item(driver, wait, item)
-
-        with open('rate_result.txt', 'a', encoding='utf-8') as f:
-            f.write(json.dumps(rated) + ',\n')
-
-    logoff_imdb(wait)
 
 if __name__ == '__main__':
-    start = timer()
-    # run_watchlist_adding()
-    run_rating()
-    end = timer()
-    print(f'Script lasted for {round(end-start, 1)} seconds')
+    list_unsuccessful('ratings')
