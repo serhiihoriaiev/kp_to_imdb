@@ -1,7 +1,5 @@
 import time
 import json
-import pickle
-import os
 import credentials
 
 from kp_functions import init_driver
