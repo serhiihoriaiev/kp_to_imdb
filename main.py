@@ -15,5 +15,5 @@ if __name__ == '__main__':
 
     choice = input("What do you want?\n\t1. Export KP watchlist\n\t2. Export KP ratings\n\t" 
                    "3. Add movies/shows to IMDB watchlist\n\t4. Rate movies/shows on IMDB\n\t"
-                   "5. Parse ratings HTML content\n6. Parse watchlist HTML content\n")
+                   "5. Parse ratings HTML content\n\t6. Parse watchlist HTML content\n")
     choices[choice]()
