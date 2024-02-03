@@ -209,8 +209,8 @@ def list_unsuccessful(job_type):
         if job_type == 'ratings':
             print(item['name'], item['year'], item['rating'], sep=', ')
         elif job_type == 'watchlist':
-            print(item['name'], item['year'], sep=', ')
+            print(item['name'] if item['name'] else item['ru_name'], item['year'], sep=', ')
 
 
 if __name__ == '__main__':
-    list_unsuccessful('ratings')
+    list_unsuccessful('watchlist')
